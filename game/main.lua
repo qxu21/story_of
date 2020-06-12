@@ -9,9 +9,10 @@ function love.load()
     til_wait_over = 0 --for longer-length characters like period
     tdisp = {} --table of characters with metadata that are actively being drawn
     is_typing = false
-    scene = 0
-    line = 1
-    scene_two_timer = 0
+    scene = 1
+    line = 5
+    til = 0 --until
+    image_drawn = nil
     default_color = {
         r=1,
         g=1,
@@ -35,6 +36,8 @@ function love.load()
     tbuf = {} --text buffer
     is_saying = false
     function sayText(text,color)
+        tdisp = {}
+        center_text = ""
         is_saying = true
         ctext = "" --clean text, without markup
         local mkups = {} --markup info to be merged into tbuf
@@ -100,17 +103,60 @@ function love.load()
         is_saying = false
     end
 
+    local speed=0.75
     game = {
-        {
-            "On the floor of your bedroom, you find an old computer.",
-            "It says... <c128,128,128>Apple ][<c256,256,256> on the front?", ---write a validator?
-            "Man, only <c026,188,156>Mr. Flibble<c256,256,256> knows how old this thing must be.", --color Mr. Flibble as 26, 188, 156
-            "There's a <c128,128,128>cassette player<c256,256,256> hooked up to the machine. " .. --oo, multiline - but don't forget the spaces
-            "You lean down and try to read the label on the <c128,128,128>cassette<c256,256,256>, but it's smudged off.",
-            "Only one thing left to do, you suppose.",
-            "You turn the machine on..."
+        --[[ TABLE FIELDS:
+            dial - dialogue. default, next keypress advances
+            grey - do a setGray(grey)
+            dur - wait this long before calling the next event, or for keypress if nil (maybe 0 in the future)
+        ]]
+        [1] = {
+            {dial="On the floor of your bedroom, you find an old computer."},
+            {dial="It says... <c128,128,128>Apple ][<c256,256,256> on the front?"}, ---write a validator?
+            {dial="Man, only <c026,188,156>Mr. Flibble<c256,256,256> knows how old this thing must be."}, --color Mr. Flibble as 26, 188, 156
+            {dial="There's a <c128,128,128>cassette player<c256,256,256> hooked up to the machine. " .. --oo, multiline - but don't forget the spaces
+                "You lean down and try to read the label on the <c128,128,128>cassette<c256,256,256>, but it's smudged off."},
+            {dial="Only one thing left to do, you suppose."},
+            {dial="You turn the machine on..."}
+        },
+        [2] = {
+            {
+                dur=speed
+            },
+            {
+                grey=0.67,
+                dur=speed
+            },
+            {
+                grey=0.33,
+                dur=speed
+            },
+            {
+                grey=0,
+                dur=speed
+            },
+            {
+                img=images.splash[1],
+                dur=speed
+            },
+            {
+                img=images.splash[2],
+                dur=speed
+            },
+            {
+                img=images.splash[3],
+                dur=nil
+            },
         }
     }
+
+    function renderline(l)
+        if l.dial then sayText(l.dial) end
+        if l.grey then setgrey(l.grey) end
+        if l.img then image_drawn = l.img else image_drawn = nil end
+    end
+
+
 
     center_text = "PRESS START"
 
@@ -121,6 +167,11 @@ end
 function love.update(dt)
     --text is fed into t when needed
     til_text = til_text + dt
+    til = til + dt
+    if game[scene] and game[scene][line] and game[scene][line].dur then
+        if til < game[scene][line].dur then return end
+    end
+    til = 0
     if til_text >= 1/cps and tbuf[1] and not is_saying then
         is_typing = true
         til_text = 0
@@ -136,8 +187,10 @@ function love.update(dt)
         end
     end
     if scene == 2 then
-        scene_two_timer = scene_two_timer + dt
-        local speed = 0.75
+        print(line)
+        renderline(game[2][line])
+        line = line + 1
+        --[[local speed = 0.75
         if scene_two_timer > 1*speed and scene_two_timer <= 2*speed then setgrey(0.67)
         elseif scene_two_timer > 2*speed and scene_two_timer <= 3*speed then setgrey(0.33)
         elseif scene_two_timer > 3*speed and scene_two_timer <= 4*speed then tdisp = {}
@@ -145,8 +198,7 @@ function love.update(dt)
         elseif scene_two_timer > 4.5*speed and scene_two_timer <= 5*speed then dosplash = 2
         elseif scene_two_timer > 5*speed and scene_two_timer <= 6*speed then dosplash = 3
         --eventually i'm coding a proper gamestate parser, but not for the demo
-            setgrey(1)
-        end
+            setgrey(1) ]]
     end
 end
 
@@ -172,11 +224,11 @@ function love.draw()
     end
     love.graphics.printf(center_text, 100, 400, 600, "center")
     --love.graphics.draw(images.loaf,(love.graphics.getWidth()-images.loaf:getPixelWidth())/2)
-    if dosplash then 
+    if image_drawn then 
         love.graphics.draw(
-            images.splash[dosplash],
-            (love.graphics.getWidth()-images.splash[dosplash]:getPixelWidth())/2,
-            (love.graphics.getHeight()-images.splash[dosplash]:getPixelHeight())/2
+            image_drawn,
+            (love.graphics.getWidth()-image_drawn:getPixelWidth())/2,
+            (love.graphics.getHeight()-image_drawn:getPixelHeight())/2
         )
     end
 end
@@ -185,14 +237,15 @@ function love.keypressed(key, scancode, isrepeat)
     if scene == 0 then
         scene = 1
     end
-    if scene == 1 and not is_typing then
+    if scene == 1 and not is_typing then --todo - scene agnostic
         if line > table.getn(game[scene]) then 
+            til = 0
             scene = 2
+            --renderline(game[2][1])
+            line = 1
             return
         end
-        center_text = ""
-        tdisp = {}
-        sayText(game[scene][line])
+        renderline(game[scene][line])
         line = line + 1
         
         --control flow might be a little cursed here   
