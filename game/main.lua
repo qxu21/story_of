@@ -8,11 +8,12 @@ function love.load()
     cps = 30 --chars per second
     til_wait_over = 0 --for longer-length characters like period
     tdisp = {} --table of characters with metadata that are actively being drawn
-    is_typing = false
-    scene = 1
-    line = 5
+    is_buffering = false
+    scene = 3
+    line = 1
     til = 0 --until
     image_drawn = nil
+    keypresses = {}
     default_color = {
         r=1,
         g=1,
@@ -27,11 +28,13 @@ function love.load()
     end
     images = {
         splash= {
-            love.graphics.newImage"sprites/splash2x_lowa.png",
-            love.graphics.newImage"sprites/splash2x_mida.png",
-            love.graphics.newImage"sprites/splash2x.png"
+            img = love.graphics.newImage"sprites/splash2x.png",
+            loc = "center"
         },
-        loaf=love.graphics.newImage"sprites/loaf2x.png"
+        loaf= {
+            img = love.graphics.newImage"sprites/loaf2x.png",
+            loc = "dial"
+        }
     }
     tbuf = {} --text buffer
     is_saying = false
@@ -41,15 +44,10 @@ function love.load()
         is_saying = true
         ctext = "" --clean text, without markup
         local mkups = {} --markup info to be merged into tbuf
-        --i hope draw doesn't call in the middle of this and cause a race condition
-        --brb fixing that
-        --fixed with is_saying
         local markup_mode = nil
         for i=1,#text do
             if not markup_mode and text:sub(i,i) == "<" then
-                markup_mode = text:sub(i+1,i+1) 
-                --just don't put < at the end of messages you little shits
-                --unless it'll just return nil, because that would be funny
+                markup_mode = text:sub(i+1,i+1) --inb4 out of index
                 if markup_mode == "c" then
                     --<cRRR,GGG,BBB>
                     mkups[#ctext+1] = {
@@ -59,6 +57,19 @@ function love.load()
                         b = tonumber(text:sub(i+10,i+12)),
                     }
                     
+                elseif markup_mode == "/" then
+                    markup_demode = text:sub(i+2,i+2)
+                    if markup_demode == "c" then
+                        --[[mkups[#ctext+1] = {
+                            markup = "c",
+                            r = default_color.r,
+                            g=default_color.g,
+                            b=default_color.b
+                        }]]
+                        mkups[#ctext+1] = {
+                            markup = "/c",
+                        }
+                    else print("Invalid markup demode!") end
                 end
             elseif markup_mode and text:sub(i,i) == ">" then
                 markup_mode = nil
@@ -67,13 +78,6 @@ function love.load()
             end
         end
         for i=1,#ctext do
-            --if ctext:sub(i,i) == "<" then
-                --[[ formatting docstring:
-                    <c=000000 - hexadecimal color to apply>
-                    <n> - newline
-                ]]
-                -- coming back to this lol
-                -- DONT FORGET TO JUMP i OVER THE FORMATTING CODE, OR BETTER YET, REDACT IT FROM THE TEXT
             --37 characters per line
             if i % 37 == 0 then
                 j = i
@@ -92,13 +96,12 @@ function love.load()
             end
         end
         for i,v in pairs(mkups) do
+            if i > #tbuf then i = #tbuf end
             for k,w in pairs(v) do
+                --print(i,k,w)
+                --print(#tbuf)
                 tbuf[i][k] = w
             end
-            --[[for k,w in pairs(tbuf[i]) do
-                print(k .. " : " .. tostring(w))
-                
-            end]]
         end
         is_saying = false
     end
@@ -110,6 +113,11 @@ function love.load()
             grey - do a setGray(grey)
             dur - wait this long before calling the next event, or for keypress if nil (maybe 0 in the future)
         ]]
+        [0] = {
+            {
+                center_text="PRESS START"
+            }
+        },
         [1] = {
             {dial="On the floor of your bedroom, you find an old computer."},
             {dial="It says... <c128,128,128>Apple ][<c256,256,256> on the front?"}, ---write a validator?
@@ -117,9 +125,10 @@ function love.load()
             {dial="There's a <c128,128,128>cassette player<c256,256,256> hooked up to the machine. " .. --oo, multiline - but don't forget the spaces
                 "You lean down and try to read the label on the <c128,128,128>cassette<c256,256,256>, but it's smudged off."},
             {dial="Only one thing left to do, you suppose."},
-            {dial="You turn the machine on..."}
+            {dial="You turn the machine on..."},
         },
         [2] = {
+            --railroad=true, --do not allow keypress advances
             {
                 dur=speed
             },
@@ -136,44 +145,75 @@ function love.load()
                 dur=speed
             },
             {
-                img=images.splash[1],
-                dur=speed
+                img=images.splash,
+                dur=speed/2,
+                grey=0.5,
+                cleardisp=true
             },
             {
-                img=images.splash[2],
-                dur=speed
+                img=images.splash,
+                dur=speed/2,
+                grey=0.75,
             },
             {
-                img=images.splash[3],
-                dur=nil
+                img=images.splash,
+                --dur=speed/2,
+                grey=1,
             },
-        }
+        },
+        [3] = {
+            {
+                img = images.loaf, --todo - fade in
+                dial="Hey!"
+            },
+            {
+                img = images.loaf, 
+                dial="Welcome to The Story of Rassilon!"
+            },
+            {
+                img = images.loaf, 
+                dial="I'm your host, <c077,161,214>Loaf</c>."
+            },
+        },
     }
+
+    function advanceline()
+        --[[ CONTROL FLOW:
+            scene and line represent THE CURRENT SCENE AND LINE.
+            so they should be incremented when advanceline() is called
+            but BEFORE the render. that way scene and line are up to date.
+            squishing a bug by making scene 0 a thing.
+        ]]
+        if line == #game[scene] then 
+            til = 0
+            scene = scene + 1
+            line = 1 --IF YOU GET A NIL LINE, IT'S PROBABLY THIS
+        else
+            line = line + 1
+        end
+        print(scene, line)
+        renderline(game[scene][line])
+    end
 
     function renderline(l)
         if l.dial then sayText(l.dial) end
         if l.grey then setgrey(l.grey) end
+        if l.cleardisp then tdisp = {} end
+        if l.center_text then center_text = l.center_text else center_text = nil end
         if l.img then image_drawn = l.img else image_drawn = nil end
+
     end
-
-
-
-    center_text = "PRESS START"
-
+    --center_text = "PRESS START"
     dosplash = nil
-
+    renderline(game[scene][line]) --heh
 end
 
 function love.update(dt)
-    --text is fed into t when needed
+    --text is fed into tdisp when needed
     til_text = til_text + dt
     til = til + dt
-    if game[scene] and game[scene][line] and game[scene][line].dur then
-        if til < game[scene][line].dur then return end
-    end
-    til = 0
     if til_text >= 1/cps and tbuf[1] and not is_saying then
-        is_typing = true
+        is_buffering = true
         til_text = 0
         if til_wait_over ~= 0 then
             til_wait_over = til_wait_over - 1
@@ -183,22 +223,22 @@ function love.update(dt)
                 til_wait_over = 3
             end
             table.remove(tbuf,1)
-            if not tbuf[1] then is_typing = false end
+            if not tbuf[1] then is_buffering = false end
         end
     end
-    if scene == 2 then
-        print(line)
-        renderline(game[2][line])
-        line = line + 1
-        --[[local speed = 0.75
-        if scene_two_timer > 1*speed and scene_two_timer <= 2*speed then setgrey(0.67)
-        elseif scene_two_timer > 2*speed and scene_two_timer <= 3*speed then setgrey(0.33)
-        elseif scene_two_timer > 3*speed and scene_two_timer <= 4*speed then tdisp = {}
-        elseif scene_two_timer > 4*speed and scene_two_timer <= 4.5*speed then dosplash = 1
-        elseif scene_two_timer > 4.5*speed and scene_two_timer <= 5*speed then dosplash = 2
-        elseif scene_two_timer > 5*speed and scene_two_timer <= 6*speed then dosplash = 3
-        --eventually i'm coding a proper gamestate parser, but not for the demo
-            setgrey(1) ]]
+    if game[scene] and game[scene][line] and game[scene][line].dur then
+        if til < game[scene][line].dur then return end
+    end
+    til = 0
+    if game[scene][line] and game[scene][line].dur then advanceline() ; print("dur", scene, line)
+    elseif keypresses[1] and not game[scene][line].dur then --just deprecated railroad
+        --if scene == 0 then scene = 1 end
+        if not is_buffering then --todo - scene agnostic 
+            advanceline()
+            --control flow might be a little cursed here   
+        end
+        table.remove(keypresses,1) --loop over all keypresses in one update?
+        print("key", scene, line)
     end
 end
 
@@ -210,7 +250,9 @@ function love.draw()
     for i,v in ipairs(tdisp) do 
         if v.markup == "c" then
             love.graphics.setColor(v.r/256,v.g/256,v.b/256)
-        end  
+        elseif v.markup == "/c" then
+            love.graphics.setColor(default_color.r,default_color.g,default_color.b,default_color.a)
+        end
         if not v.char then
             if v.newline then
                 newlines = newlines + 1
@@ -219,37 +261,28 @@ function love.draw()
         else
             love.graphics.print(v.char,100+dpos*16,400+18*newlines) --no newlines yet
             dpos = dpos + 1
-            --love.graphics.setColor(1,1,1)
         end
     end
-    love.graphics.printf(center_text, 100, 400, 600, "center")
-    --love.graphics.draw(images.loaf,(love.graphics.getWidth()-images.loaf:getPixelWidth())/2)
-    if image_drawn then 
+    --beware this color reset
+    love.graphics.setColor(default_color.r,default_color.g,default_color.b,default_color.a)
+    if center_text then love.graphics.printf(center_text, 100, 400, 600, "center") end
+    if image_drawn then --limitation - can only draw one image centrally. future images should be drawn separately
+        if image_drawn.loc == "center" then
+            imgx = (love.graphics.getWidth()-image_drawn.img:getPixelWidth())/2
+            imgy = (love.graphics.getHeight()-image_drawn.img:getPixelHeight())/2
+        elseif image_drawn.loc == "dial" then
+            imgx = (love.graphics.getWidth()-image_drawn.img:getPixelWidth())/2
+            imgy = 390-image_drawn.img:getPixelHeight()
+        end
         love.graphics.draw(
-            image_drawn,
-            (love.graphics.getWidth()-image_drawn:getPixelWidth())/2,
-            (love.graphics.getHeight()-image_drawn:getPixelHeight())/2
+            image_drawn.img, imgx, imgy
         )
     end
 end
 
-function love.keypressed(key, scancode, isrepeat)
-    if scene == 0 then
-        scene = 1
-    end
-    if scene == 1 and not is_typing then --todo - scene agnostic
-        if line > table.getn(game[scene]) then 
-            til = 0
-            scene = 2
-            --renderline(game[2][1])
-            line = 1
-            return
-        end
-        renderline(game[scene][line])
-        line = line + 1
-        
-        --control flow might be a little cursed here   
-    end
+function love.keypressed(key,scancode,isrepeat)
+    --all keypress code ported to update()
+    table.insert(keypresses,key) --why does keypresses:insert not work
 end
 
 
