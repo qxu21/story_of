@@ -1,3 +1,7 @@
+--WHEN MAKING THE .LOVE, YOU NEED TO ZIP WHILE PWD=/GAME
+--OR FIGURE IT OUT
+--AND TEST YOUR DAMNED .LOVE BEFORE BUILDING, DAMMIT
+
 function love.load()
     love.graphics.setColor(255,255,255,1)
     f = love.graphics.newFont("apple.ttf",16,"none")
@@ -366,7 +370,7 @@ function love.load()
         else
             line = line + 1
         end
-        print(scene, line)
+        --print(scene, line)
         renderline(game[scene][line])
     end
 
@@ -421,7 +425,7 @@ function love.update(dt)
             --control flow might be a little cursed here   
         end
         table.remove(keypresses,1) --loop over all keypresses in one update?
-        print("key", scene, line)
+        --print("key", scene, line)
     end
 end
 
