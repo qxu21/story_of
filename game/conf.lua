@@ -1,6 +1,6 @@
 function love.conf(t)
     t.window.title = "Apple ]["
-    t.modules.audio = false              -- Enable the audio module (boolean)
+    t.modules.audio = true              -- Enable the audio module (boolean)
     t.modules.data = true               -- Enable the data module (boolean)
     t.modules.event = true              -- Enable the event module (boolean)
     t.modules.font = true               -- Enable the font module (boolean)
