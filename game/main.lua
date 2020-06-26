@@ -1,9 +1,13 @@
 --WHEN MAKING THE .LOVE, YOU NEED TO ZIP WHILE PWD=/GAME
 --OR FIGURE IT OUT
 --AND TEST YOUR DAMNED .LOVE BEFORE BUILDING, DAMMIT
+--[[ TO FIX:
+    -MUSIC
+    -OVERFLOW BUGS AGAIN
+]]
 
 function love.load()
-    love.graphics.setColor(255,255,255,1)
+    love.graphics.setColor(1,1,1,1)
     f = love.graphics.newFont("apple.ttf",16,"none")
     --bf =  --bigger font?
     love.graphics.setFont(f)
@@ -119,6 +123,7 @@ function love.load()
 
     local g = require("game")
     game = g.game
+    select_screen = require("select_screen")
 
     function advanceline()
         --[[ CONTROL FLOW:
@@ -157,6 +162,7 @@ end
 
 function love.update(dt)
     --text is fed into tdisp when needed
+    --good god make this callbacks already
     til_text = til_text + dt
     til = til + dt
     if fadesource then fadesource:setVolume(fadesource:getVolume()-dt/3) end
@@ -182,15 +188,17 @@ function love.update(dt)
         if til < game[scene][line].dur then return end
     end
     til = 0
-    if game[scene][line] and game[scene][line].dur then advanceline() ; print("dur", scene, line)
-    elseif keypresses[1] and not game[scene][line].dur then --just deprecated railroad
-        --if scene == 0 then scene = 1 end
-        if not is_buffering then --todo - scene agnostic 
+    
+    if game[scene][line] and game[scene][line].dur then advanceline()
+    elseif game[scene][line].select_screen and keypresses[1] then
+        select_screen.arrow(keypresses[1])
+        table.remove(keypresses,1)
+    elseif keypresses[1] and not game[scene][line].dur then
+        if not is_buffering then
             advanceline()
             --control flow might be a little cursed here   
         end
         table.remove(keypresses,1) --loop over all keypresses in one update?
-        --print("key", scene, line)
     end
 end
 
@@ -217,7 +225,7 @@ function love.draw()
             end
         else
             local xpos = 100+dpos*16
-            local ypos = 400+24*newlines
+            local ypos = 420+24*newlines
             if wstate then ypos = ypos + 4*math.sin(wstate) end
             love.graphics.print(v.char,xpos,ypos) --no newlines yet
             dpos = dpos + 1
@@ -233,17 +241,23 @@ function love.draw()
             imgy = (love.graphics.getHeight()-image_drawn.img:getPixelHeight())/2
         elseif image_drawn.loc == "dial" then
             imgx = (love.graphics.getWidth()-image_drawn.img:getPixelWidth())/2
-            imgy = 390-image_drawn.img:getPixelHeight()
+            imgy = 400-image_drawn.img:getPixelHeight()
         end
         love.graphics.draw(
             image_drawn.img, imgx, imgy
         )
     end
+    if game[scene].dialbox then 
+        love.graphics.setColor(1,1,1,1) --default_color?
+        love.graphics.rectangle("line",80,400,640,150) --why is it grey
+    end
+    if game[scene][line].select_screen then select_screen.draw() end
 end
 
 function love.keypressed(key,scancode,isrepeat)
     --all keypress code ported to update()
     --learn to ignore fn keys, alttab, etc
+    --keypressed is for like movements, but i handle it all in update()
     table.insert(keypresses,key) --why does keypresses:insert not work
 end
 

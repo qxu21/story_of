@@ -44,6 +44,9 @@ M.game = {
     [0] = {
         {
             center_text="TURN YOUR SOUND ON"
+        },
+        {
+            select_screen=true
         }
     },
     [1] = {
@@ -56,14 +59,9 @@ M.game = {
             "You lean down and try to read the label on the <c128,128,128>cassette<c256,256,256>, but it's smudged off."},
         {dial="Only one thing left to do, you suppose."},
         {dial="You turn the machine on..."},
-    },
-    [2] = {
-        --railroad=true, --do not allow keypress advances
         {
             dur=speed,
-
             fadesource=M.music.opening,
-
             fadedur = speed*3
         },
         {
@@ -77,7 +75,10 @@ M.game = {
         {
             grey=0,
             dur=speed,
-        },
+        }, --just moved this from scene 2
+    },
+    [2] = {
+        --railroad=true, --do not allow keypress advances
         {
             img=M.images.splash,
             dur=speed/2,
@@ -99,6 +100,7 @@ M.game = {
         },
     },
     [3] = {
+        dialbox=true,
         {
             img = M.images.loaf, --todo - fade in
             dial="Hey!"
