@@ -29,10 +29,15 @@ M.images = {
 }
 M.music = {
     opening = love.audio.newSource("music/Opening.ogg","stream"),
-    theme = love.audio.newSource("music/Theme.ogg","stream")
+    theme = love.audio.newSource("music/Theme.ogg","stream"),
+    flibble = love.audio.newSource("music/Mr_Flibble.ogg","stream")
 }
-M.music.opening:setLooping(true)
+--[[M.music.opening:setLooping(true)
 M.music.theme:setLooping(true)
+M.music.flibble:setLooping(true)]]
+for i,p in pairs(M.music) do
+    p:setLooping(true) --assuming all MUSIC loops - FX are different
+end
 
 
 M.game = {
@@ -241,6 +246,126 @@ M.game = {
             dial="To be continued..."
         }
     },
+    [4] = {
+        dialbox=true,
+        {
+            play=M.music.flibble,
+            dial="Erg...",
+        },
+        {
+            dial="Thrice-damned computer...",
+        },
+        {
+            dial="Hey!",
+        },
+        {
+            dial="Who're you?",
+        },
+        {
+            dial="Ohhh, you must be the Player.",
+        },
+        {
+            dial="Allow me to introduce myself: I'm <c026,188,156>Mr. Flibble</c>.",
+        },
+        {
+            dial="They said I'm supposed to show you around.",
+        },
+        {
+            dial="So welcome to <w>The Basement!</w>",
+        },
+        {
+            dial="This is where I live, and it's also my job.",
+        },
+        {
+            dial="I work on the computers over here, and the drum set's over there.",
+        },
+        {
+            dial="I would say it's not all that bad, but that would be a lie.",
+        },
+        {
+            dial="Anyway...",
+        },
+        {
+            dial="Do you know why you're here?",
+        },
+        {
+            dial="Because I sure don't.",
+        },
+        {
+            dial="Here, I need some help on this bit.",
+        },
+        {
+            dial="I've got two computers here and I'm thinking of welding them together to make one, bigger, computer.", --bold something?
+        },
+        {
+            dial="Of course, it has a chance of breaking horribly and ruining both boxes.",
+        },
+        {
+            dial="Should I do it?",
+        },
+        
+        {
+            choice={
+                {tag="yes", text="DO IT!"},
+                {tag="no", text="I don't think so."}
+            }
+        },
+        {
+            tag="yes",
+            dial="I like your style!",
+        },
+        {
+            dial="Okay, here goes.",
+        },
+        {
+            dial="[welding]",
+        },
+        {
+            dial="Aaa! Shit on a stick!",
+        },
+        {
+            dial="[roaring]",
+        },
+        {
+            dial="Oh god, it's going to go for my spleen!",
+        },
+        {
+            dial="<w>Why do they always go for the spleeeeeeeeeen?</w>",
+        },
+        {
+            dial="[shutdown noise]",
+        },
+        {
+            dial="Phew! Shut it down.",
+        },
+        {
+            dial="Okay, I'd blame you for that, but it was entirely my fault.",
+        },
+        {
+            tag="no",
+            dial="Aw man, are you one of those voice of reason types?",
+        },
+        {
+            dial="You're no fun.",
+        },
+        {
+            dial="But I asked you, so I suppose I ought to listen.",
+        },
+        {
+            dial="Maybe it would have turned into a robotic monstrosity like the last three times.",
+        },
+        
+        {
+            endtag=true,
+            dial="Anyway, that's your introduction to the basement.",
+        },
+        {
+            dial="If you need a computer yelled at, metal recommendations, or opinions on old British sci-fi shows, you know where to find me.",
+        },
+        {
+            dial="See ya round.",
+        },
+    }
 }
 
 return M

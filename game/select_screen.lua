@@ -1,8 +1,9 @@
 local M = {}
 
 M.scenes = {
-    {scene=1,text="OPENING"},
-    {scene=2,text="INTRO"},
+    {scene=1,text={"OPENING"}}, --supports up to 3 lines
+    {scene=2,text={"INTRO"}},
+    {scene=4,text={"CHAPTER 1","MR. FLIBBLE","NEW!"}}
 } --list of jumpable scenes -TODO - custom rendered text
 
 M.x = 1 --left to right
@@ -38,14 +39,16 @@ function M.draw()
         local xpos = math.floor(20 + x*(xlen+30))
         local ypos = math.floor(20 + y*(ylen+30)) --maybe stop hardcoding some of this :|
         if x + 1 == M.x and y+1 == M.y then
-            love.graphics.setColor(248/255,222/255,52/255,1)
+            love.graphics.setColor(248/255,222/255,52/255,1) --store colors somewhere
         else
             love.graphics.setColor(1,1,1,1)
         end
-        love.graphics.setLineWidth(5) --YEEEES
+        love.graphics.setLineWidth(4) --YEEEES - but stick to even values
         love.graphics.rectangle("line", xpos,ypos,xlen,ylen)
         love.graphics.setColor(1,1,1,1)
-        love.graphics.printf(s.text,xpos,ypos+20,xlen,"center")
+        for n,t in ipairs(s.text) do
+            love.graphics.printf(s.text[n],xpos,ypos+20+(n-1)*24,xlen,"center")
+        end
         if x ~= M.xmax-1 then
             x = x + 1 
         else
@@ -53,6 +56,10 @@ function M.draw()
             y = y + 1 --no pagination 4 u
         end
     end
+end
+
+function M.scene()
+    return M.scenes[M.x + (M.y-1) * M.xmax].scene
 end
 
 return M

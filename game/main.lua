@@ -6,6 +6,18 @@
     -OVERFLOW BUGS AGAIN
 ]]
 
+function iter (a, i)
+    i = i + 1
+    local v = a[i]
+    if v then
+      return i, v
+    end
+  end
+  
+  function spairs (a,start)
+    return iter, a, start-1
+  end
+
 function love.load()
     love.graphics.setColor(1,1,1,1)
     f = love.graphics.newFont("apple.ttf",16,"none")
@@ -17,9 +29,10 @@ function love.load()
     til_wait_over = 0 --for longer-length characters like period
     tdisp = {} --table of characters with metadata that are actively being drawn
     is_buffering = false
-    scene = 0
-    line = 1
+    scene = 3 --admin console when
+    line = 29
     til = 0 --until
+    choice = 1
     image_drawn = nil
     fadesource = nil
     keypresses = {}
@@ -89,12 +102,17 @@ function love.load()
                 ctext = ctext .. text:sub(i,i)
             end
         end
+        local wrapcounter=1
         for i=1,#ctext do
             --37 characters per line
-            if i % 37 == 0 then
+            if wrapcounter == 37 then
                 j = i
+                wrapcounter = 0
+                --print(i,ctext:sub(i,i))
                 while ctext:sub(j,j) ~= " " do
                     j = j - 1
+                    wrapcounter = wrapcounter + 1 --watch there be an off by one in here somewhere
+                    --print(j,ctext:sub(j,j))
                 end
                 if j == i then
                     next_char = {newline=true}
@@ -103,9 +121,11 @@ function love.load()
                     next_char = {char=ctext:sub(i,i)}
                 end
                 table.insert(tbuf,next_char)
+                
             else
                 table.insert(tbuf,{char=ctext:sub(i,i)})
             end
+            wrapcounter = wrapcounter + 1
         end
         for i,v in pairs(mkups) do
             if i > #tbuf then
@@ -137,6 +157,13 @@ function love.load()
             if scene == #game then return end
             scene = scene + 1
             line = 1 --IF YOU GET A NIL LINE, IT'S PROBABLY THIS
+        elseif game[scene][line+1].tag then
+            for i,v in spairs(game[scene],line) do
+                if v.endtag then 
+                    line=i
+                    break
+                end
+            end
         else
             line = line + 1
         end
@@ -191,8 +218,28 @@ function love.update(dt)
     
     if game[scene][line] and game[scene][line].dur then advanceline()
     elseif game[scene][line].select_screen and keypresses[1] then
-        select_screen.arrow(keypresses[1])
+        if keypresses[1] == "return" then
+            scene = select_screen.scene()
+            line = 1
+            renderline(game[scene][line])
+        else
+            select_screen.arrow(keypresses[1])
+        end
         table.remove(keypresses,1)
+    elseif keypresses[1] and game[scene][line].choice then
+        if keypresses[1]=="return" then
+            for i,v in spairs(game[scene],line) do --this should start at the current line when tag hunting
+                if v.tag and v.tag == game[scene][line].choice[choice].tag then
+                    line = i
+                    renderline(game[scene][line])
+                    break
+                end
+            end
+        else
+            if choice == #game[scene][line].choice then choice = 1
+            else choice = choice + 1 end
+        end
+        table.remove(keypresses,1) --repetition ouch - i need to read these comments and clean house
     elseif keypresses[1] and not game[scene][line].dur then
         if not is_buffering then
             advanceline()
@@ -246,6 +293,16 @@ function love.draw()
         love.graphics.draw(
             image_drawn.img, imgx, imgy
         )
+    end
+    love.graphics.setLineWidth(4)
+    if game[scene][line].choice then
+        --for my sanity let's only implement two choices
+        --idk how 3+ choices should be implemented anyway
+        for i, c in ipairs(game[scene][line].choice) do
+            if i == choice then love.graphics.setColor(248/255,222/255,52/255,1)
+            else love.graphics.setColor(1,1,1,1) end
+            love.graphics.printf(game[scene][line].choice[i].text,80+320*(i-1),475,320,"center")
+        end
     end
     if game[scene].dialbox then 
         love.graphics.setColor(1,1,1,1) --default_color?
