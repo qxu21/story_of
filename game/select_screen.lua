@@ -3,7 +3,12 @@ local M = {}
 M.scenes = {
     {scene=1,text={"OPENING"}}, --supports up to 3 lines
     {scene=2,text={"INTRO"}},
-    {scene=4,text={"CHAPTER 1","MR. FLIBBLE","NEW!"}}
+    {scene=4,text={"CHAPTER 1","MR. FLIBBLE","NEW!"}},
+    {scene=nil,text={"???"}},
+    {scene=nil,text={"???"}},
+    {scene=nil,text={"???"}},
+    {scene=nil,text={"???"}},
+    {scene=nil,text={"???"}},
 } --list of jumpable scenes -TODO - custom rendered text
 
 M.x = 1 --left to right

@@ -56,7 +56,14 @@ M.images = {
 M.music = {
     opening = love.audio.newSource("music/Opening.ogg","stream"),
     theme = love.audio.newSource("music/Theme.ogg","stream"),
-    flibble = love.audio.newSource("music/Mr_Flibble.ogg","stream")
+    flibble = love.audio.newSource("music/Mr_Flibble.ogg","stream"),
+    hsf = love.audio.newSource("music/HSF.ogg","stream"), --hammer smashed face by cannibal corpse
+}
+M.music.hsf:setVolume(0.75)
+M.sfx = {
+    powerup = love.audio.newSource("sfx/powerup.ogg","static"),
+    powerdown = love.audio.newSource("sfx/powerdown.ogg","static"),
+    distress = love.audio.newSource("sfx/distress.ogg","static"),
 }
 --[[M.music.opening:setLooping(true)
 M.music.theme:setLooping(true)
@@ -64,7 +71,7 @@ M.music.flibble:setLooping(true)]]
 for i,p in pairs(M.music) do
     p:setLooping(true) --assuming all MUSIC loops - FX are different
 end
-
+M.sfx.distress:setLooping(true)
 
 M.game = {
     --[[ TABLE FIELDS:
@@ -77,6 +84,7 @@ M.game = {
             center_text="TURN YOUR SOUND ON"
         },
         {
+            reset=true,
             select_screen=true
         }
     },
@@ -115,7 +123,7 @@ M.game = {
             dur=speed/2,
             grey=0.5,
             cleardisp=true,
-            stop = M.music.opening
+            stop = true
         },
         {
             img=M.images.splash,
@@ -128,13 +136,15 @@ M.game = {
             grey=1,
             center_text = "PRESS START",
             play = M.music.theme
+            
         },
     },
     [3] = {
         
         {
-            reset=true,
+            --reset=true,
             dialbox=true,
+            --play = M.music.theme,
             img = M.images.loaf.neutral, --todo - fade in
             dial="Hey!"
         },
@@ -270,6 +280,9 @@ M.game = {
             img = M.images.loaf.wave, 
             dial="Until later!"
         },
+        {
+            dial="(Continue?)",
+        }
         --[[{
             dial="To be continued..."
         }]]
@@ -305,7 +318,7 @@ M.game = {
         },
         {
             img=M.images.flibble.excited,
-            dial="Allow me to introduce myself: I'm <c026,188,156>Mr. Flibble</c>.",
+            dial="Allow me to introduce myself: I'm <c026,188,156>Mr. Flibble</c>!",
         },
         {
             img=M.images.flibble.neutral,
@@ -317,10 +330,10 @@ M.game = {
         },
         {
             img=M.images.flibble.neutral,
-            dial="This is where I live, and it's also my job.",
+            dial="This is where I live, and it's also where I work.",
         },
         {
-            dial="I work on the computers over here, and the drum set's over there.", --TODO - TURNING
+            dial="I work on the computers over here, and the drum set's behind you.", --TODO - TURNING
         },
         {
             img=M.images.flibble.sad,
@@ -365,13 +378,19 @@ M.game = {
             dial="Okay, here goes.",
         },
         {
-            dial="[welding]",
+            stop=true,
+            img=M.images.flibble.back,
+            sfx=M.sfx.powerup,
+            dial="...Yes!",
         },
         {
+            
+            play=M.music.hsf,
             dial="Aaa! Shit on a stick!",
         },
         {
-            dial="[roaring]",
+            sfx=M.sfx.distress,
+            dial="(You hear Mr. Flibble wrestling with the machine.)",
         },
         {
             dial="Oh god, it's going to go for my spleen!",
@@ -380,9 +399,14 @@ M.game = {
             dial="<w>Why do they always go for the spleeeeeeeeeen?</w>",
         },
         {
-            dial="[shutdown noise]",
+            stopfx=M.sfx.distress,
+            sfx=M.sfx.powerdown,
+            dial="(Click.)",
+            stop=true
         },
         {
+            play=M.music.flibble,
+            img=M.images.flibble.neutral,
             dial="Phew! Shut it down.",
         },
         {
@@ -414,6 +438,9 @@ M.game = {
         {
             dial="See ya round.", --WAVE
         },
+        {
+            dial="(Continue?)",
+        }
     }
 }
 

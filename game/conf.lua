@@ -1,5 +1,5 @@
 function love.conf(t)
-    t.window.title = "Apple ]["
+    t.window.title = "The Story of Rassilon"
     t.modules.audio = true              -- Enable the audio module (boolean)
     t.modules.data = true               -- Enable the data module (boolean)
     t.modules.event = true              -- Enable the event module (boolean)

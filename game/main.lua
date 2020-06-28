@@ -53,7 +53,7 @@ function love.load()
     tbuf = {} --text buffer
     is_saying = false
     wstate = nil
-    playing = {}
+    playing = nil
     function sayText(text,color)
         tdisp = {}
         center_text = ""
@@ -182,7 +182,8 @@ function love.load()
             tdisp = {}
             center_text = nil
             drawn = {}
-            for i,v in ipairs(g.music) do v:stop() end
+            dialbox = false
+            if playing then playing:stop() end
         end
         if l.dial then sayText(l.dial) end
         if l.grey then setgrey(l.grey) end
@@ -190,8 +191,16 @@ function love.load()
         if l.center_text then center_text = l.center_text else center_text = nil end
         if l.background then drawn[1] = l.background end --pos1 is reserved for backgroud, if it exists
         if l.img then drawn[2] = l.img end --image must be manually reset to nil
-        if l.play then l.play:play() end
-        if l.stop then l.stop:stop() end
+        if l.play then 
+            if l.play ~= playing then
+                if playing then playing:stop() end
+                playing = l.play
+                l.play:play()
+            end
+        end
+        if l.sfx then l.sfx:play() end
+        if l.stopfx then l.stopfx:stop() end
+        if l.stop and playing then playing:stop() end --or: playing.stop
         if l.fadesource then fadesource = l.fadesource end --screw it, no fadedur
         if l.dialbox == true then dialbox = true elseif l.dialbox == false then dialbox = false end --tfw
     end
@@ -232,9 +241,12 @@ function love.update(dt)
     if game[scene][line] and game[scene][line].dur then advanceline()
     elseif game[scene][line].select_screen and keypresses[1] then
         if keypresses[1] == "return" then
-            scene = select_screen.scene()
-            line = 1
-            renderline(game[scene][line])
+            selected_scene = select_screen.scene()
+            if selected_scene then
+                scene = selected_scene
+                line = 1
+                renderline(game[scene][line])
+            end
         else
             select_screen.arrow(keypresses[1])
         end
@@ -295,7 +307,7 @@ function love.draw()
     --beware this color reset
     love.graphics.setColor(default_color.r,default_color.g,default_color.b,default_color.a)
     if center_text then love.graphics.printf(center_text, 100, 450, 600, "center") end
-    for i, img in ipairs(drawn) do --limitation - can only draw one image centrally. future images should be drawn separately
+    for i, img in pairs(drawn) do --limitation - can only draw one image centrally. future images should be drawn separately
         if img.loc == "center" then
             imgx = (love.graphics.getWidth()-img.img:getPixelWidth())/2
             imgy = (love.graphics.getHeight()-img.img:getPixelHeight())/2
