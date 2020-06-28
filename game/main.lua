@@ -29,13 +29,14 @@ function love.load()
     til_wait_over = 0 --for longer-length characters like period
     tdisp = {} --table of characters with metadata that are actively being drawn
     is_buffering = false
-    scene = 3 --admin console when
-    line = 29
+    scene = 0 --admin console when
+    line = 1
     til = 0 --until
     choice = 1
-    image_drawn = nil
+    drawn = {}
     fadesource = nil
     keypresses = {}
+    dialbox = false
     default_color = {
         r=1,
         g=1,
@@ -52,6 +53,7 @@ function love.load()
     tbuf = {} --text buffer
     is_saying = false
     wstate = nil
+    playing = {}
     function sayText(text,color)
         tdisp = {}
         center_text = ""
@@ -154,9 +156,13 @@ function love.load()
         ]]
         if line == #game[scene] then 
             til = 0
-            if scene == #game then return end
-            scene = scene + 1
-            line = 1 --IF YOU GET A NIL LINE, IT'S PROBABLY THIS
+            if scene == #game then
+                scene = 0
+                line = 2
+            else
+                scene = scene + 1
+                line = 1 --IF YOU GET A NIL LINE, IT'S PROBABLY THIS
+            end
         elseif game[scene][line+1].tag then
             for i,v in spairs(game[scene],line) do
                 if v.endtag then 
@@ -172,15 +178,22 @@ function love.load()
     end
 
     function renderline(l)
+        if l.reset then
+            tdisp = {}
+            center_text = nil
+            drawn = {}
+            for i,v in ipairs(g.music) do v:stop() end
+        end
         if l.dial then sayText(l.dial) end
         if l.grey then setgrey(l.grey) end
         if l.cleardisp then tdisp = {} end
         if l.center_text then center_text = l.center_text else center_text = nil end
-        if l.img then image_drawn = l.img else image_drawn = nil end
+        if l.background then drawn[1] = l.background end --pos1 is reserved for backgroud, if it exists
+        if l.img then drawn[2] = l.img end --image must be manually reset to nil
         if l.play then l.play:play() end
         if l.stop then l.stop:stop() end
         if l.fadesource then fadesource = l.fadesource end --screw it, no fadedur
-
+        if l.dialbox == true then dialbox = true elseif l.dialbox == false then dialbox = false end --tfw
     end
     --center_text = "PRESS START"
     dosplash = nil
@@ -282,16 +295,19 @@ function love.draw()
     --beware this color reset
     love.graphics.setColor(default_color.r,default_color.g,default_color.b,default_color.a)
     if center_text then love.graphics.printf(center_text, 100, 450, 600, "center") end
-    if image_drawn then --limitation - can only draw one image centrally. future images should be drawn separately
-        if image_drawn.loc == "center" then
-            imgx = (love.graphics.getWidth()-image_drawn.img:getPixelWidth())/2
-            imgy = (love.graphics.getHeight()-image_drawn.img:getPixelHeight())/2
-        elseif image_drawn.loc == "dial" then
-            imgx = (love.graphics.getWidth()-image_drawn.img:getPixelWidth())/2
-            imgy = 400-image_drawn.img:getPixelHeight()
+    for i, img in ipairs(drawn) do --limitation - can only draw one image centrally. future images should be drawn separately
+        if img.loc == "center" then
+            imgx = (love.graphics.getWidth()-img.img:getPixelWidth())/2
+            imgy = (love.graphics.getHeight()-img.img:getPixelHeight())/2
+        elseif img.loc == "dial" then
+            imgx = (love.graphics.getWidth()-img.img:getPixelWidth())/2
+            imgy = 400-img.img:getPixelHeight()
+        else --image is assumed to have a locx and locy
+            imgx = img.locx
+            imgy = img.locy
         end
         love.graphics.draw(
-            image_drawn.img, imgx, imgy
+            img.img, imgx, imgy
         )
     end
     love.graphics.setLineWidth(4)
@@ -304,7 +320,7 @@ function love.draw()
             love.graphics.printf(game[scene][line].choice[i].text,80+320*(i-1),475,320,"center")
         end
     end
-    if game[scene].dialbox then 
+    if dialbox then 
         love.graphics.setColor(1,1,1,1) --default_color?
         love.graphics.rectangle("line",80,400,640,150) --why is it grey
     end
