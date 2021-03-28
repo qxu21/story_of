@@ -7,3 +7,5 @@ It's not done yet, but I'm sending the chapters out as I make them. I think you 
 * Game engine: [LOVE2D](https://love2d.org/)
 * Art: [Piskel](https://www.piskelapp.com/)
 * Music: [FL Studio](https://www.image-line.com/flstudio/), with 3x Osc for synths and [drum samples from Contralogic](http://www.contralogic.com/256-nes-samples/)
+
+As of March 2021, this project has been indefinitely shelved, but [I released all the music on Bandcamp](https://thefluffybread.bandcamp.com/album/the-story-of-rassilon), including several unfinished tracks.
