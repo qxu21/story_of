@@ -8,4 +8,4 @@ It's not done yet, but I'm sending the chapters out as I make them. I think you 
 * Art: [Piskel](https://www.piskelapp.com/)
 * Music: [FL Studio](https://www.image-line.com/flstudio/), with 3x Osc for synths and [drum samples from Contralogic](http://www.contralogic.com/256-nes-samples/)
 
-As of March 2021, this project has been indefinitely shelved, but [I released all the music on Bandcamp](https://thefluffybread.bandcamp.com/album/the-story-of-rassilon), including several unfinished tracks.
+As of March 2021, this project has been indefinitely shelved, but [I released all the music on Bandcamp](https://thefluffybread.bandcamp.com/album/the-story-of-rassilon), including several unfinished tracks. The most recent builds are [here](https://drive.google.com/drive/u/1/folders/1OgbWcUNpeTZR5aYT-RMOOCWQ2G7RL9N7), with Windows and Mac executables. Linux users and those with difficulties should install LOVE2D manually and run the `.love` file.
